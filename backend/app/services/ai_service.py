@@ -1,5 +1,5 @@
 """AI service for content generation and accessibility improvements"""
-import openai
+from openai import OpenAI
 from typing import Dict, List, Optional, Any
 import logging
 from app.core.config import settings
@@ -13,24 +13,32 @@ class AIService:
     def __init__(self):
         # Configure OpenAI client (works with Groq and custom endpoints)
         self.api_key = settings.GROQ_API_KEY or settings.OPENAI_API_KEY
-        self.api_base = settings.OPENAI_API_BASE_URL
+        
+        # Use Groq URL if using Groq API key, otherwise use OpenAI URL
+        if settings.GROQ_API_KEY:
+            self.api_base = "https://api.groq.com/openai/v1"
+        else:
+            self.api_base = settings.OPENAI_API_BASE_URL
         
         if self.api_key:
-            openai.api_key = self.api_key
-            openai.api_base = self.api_base
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url=self.api_base
+            )
             logger.info(f"AI Service initialized with base URL: {self.api_base}")
         else:
+            self.client = None
             logger.warning("No AI API key configured. AI features will be limited.")
     
     async def test_connection(self) -> bool:
         """Test connection to AI service"""
-        if not self.api_key:
+        if not self.client:
             logger.error("No API key configured")
             return False
         
         try:
-            response = await openai.ChatCompletion.acreate(
-                model="mixtral-8x7b-32768" if "groq" in self.api_base.lower() else "gpt-3.5-turbo",
+            response = self.client.chat.completions.create(
+                model="llama-3.1-8b-instant" if "groq" in self.api_base.lower() else "gpt-3.5-turbo",
                 messages=[{"role": "user", "content": "Test"}],
                 max_tokens=5
             )
@@ -50,16 +58,16 @@ class AIService:
         Returns:
             Generated alt text
         """
-        if not self.api_key:
+        if not self.client:
             return "Alternative text generation unavailable - no AI service configured"
         
         try:
             # Determine model based on API base
-            model = "mixtral-8x7b-32768" if "groq" in self.api_base.lower() else "gpt-4"
+            model = "llama-3.1-8b-instant" if "groq" in self.api_base.lower() else "gpt-4"
             
             prompt = self._build_alt_text_prompt(context)
             
-            response = await openai.ChatCompletion.acreate(
+            response = self.client.chat.completions.create(
                 model=model,
                 messages=[
                     {
@@ -100,13 +108,13 @@ Rules:
         Returns:
             List of headings with levels and text
         """
-        if not self.api_key:
+        if not self.client:
             return []
         
         try:
-            model = "mixtral-8x7b-32768" if "groq" in self.api_base.lower() else "gpt-4"
+            model = "llama-3.1-8b-instant" if "groq" in self.api_base.lower() else "gpt-4"
             
-            response = await openai.ChatCompletion.acreate(
+            response = self.client.chat.completions.create(
                 model=model,
                 messages=[
                     {
@@ -153,7 +161,7 @@ Rules:
         Returns:
             Dictionary with improved table structure
         """
-        if not self.api_key or not table_data:
+        if not self.client or not table_data:
             return {
                 "headers": [],
                 "caption": "",
@@ -161,12 +169,12 @@ Rules:
             }
         
         try:
-            model = "mixtral-8x7b-32768" if "groq" in self.api_base.lower() else "gpt-4"
+            model = "llama-3.1-8b-instant" if "groq" in self.api_base.lower() else "gpt-4"
             
             # Convert table to string representation
             table_str = "\n".join([" | ".join(row) for row in table_data[:5]])  # First 5 rows
             
-            response = await openai.ChatCompletion.acreate(
+            response = self.client.chat.completions.create(
                 model=model,
                 messages=[
                     {
@@ -212,13 +220,13 @@ Return a JSON object with:
         Returns:
             Remediation suggestion
         """
-        if not self.api_key:
+        if not self.client:
             return "Please configure AI service to get remediation suggestions"
         
         try:
-            model = "mixtral-8x7b-32768" if "groq" in self.api_base.lower() else "gpt-4"
+            model = "llama-3.1-8b-instant" if "groq" in self.api_base.lower() else "gpt-4"
             
-            response = await openai.ChatCompletion.acreate(
+            response = self.client.chat.completions.create(
                 model=model,
                 messages=[
                     {
