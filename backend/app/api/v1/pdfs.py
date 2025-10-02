@@ -11,6 +11,7 @@ from app.core.security import get_current_user
 from app.core.config import settings
 from app.models.pdf import PDFDocument
 from pydantic import BaseModel
+from datetime import datetime
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ class PDFResponse(BaseModel):
     id: str
     filename: str
     file_size: int
-    upload_date: str
+    upload_date: datetime
     processing_status: str
     
     class Config:
