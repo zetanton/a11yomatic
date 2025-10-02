@@ -20,8 +20,8 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose is not installed. Please install Docker Compose first."
+if ! docker compose version &> /dev/null; then
+    echo "❌ Docker Compose is not available. Please ensure Docker Desktop is installed."
     exit 1
 fi
 
@@ -35,7 +35,7 @@ echo ""
 
 # Start services
 echo "🐳 Starting Docker containers..."
-docker-compose up -d
+docker compose up -d
 
 echo ""
 echo "⏳ Waiting for services to be ready..."
@@ -48,13 +48,13 @@ if curl -s http://localhost:8000/health > /dev/null; then
     echo "✅ Backend is running at http://localhost:8000"
     echo "📚 API Documentation: http://localhost:8000/docs"
 else
-    echo "⚠️  Backend may still be starting up. Please check logs with: docker-compose logs backend"
+    echo "⚠️  Backend may still be starting up. Please check logs with: docker compose logs backend"
 fi
 
 if curl -s http://localhost:3000 > /dev/null; then
     echo "✅ Frontend is running at http://localhost:3000"
 else
-    echo "⚠️  Frontend may still be starting up. Please check logs with: docker-compose logs frontend"
+    echo "⚠️  Frontend may still be starting up. Please check logs with: docker compose logs frontend"
 fi
 
 echo ""
@@ -66,9 +66,9 @@ echo "   2. Access the application at http://localhost:3000"
 echo "   3. View API docs at http://localhost:8000/docs"
 echo ""
 echo "💡 Useful commands:"
-echo "   - View logs: docker-compose logs -f"
-echo "   - Stop services: docker-compose down"
-echo "   - Restart services: docker-compose restart"
+echo "   - View logs: docker compose logs -f"
+echo "   - Stop services: docker compose down"
+echo "   - Restart services: docker compose restart"
 echo ""
 
 

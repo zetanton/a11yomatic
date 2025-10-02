@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend API
   backend:
@@ -69,64 +67,6 @@ services:
     networks:
       - a11yomatic-network
 
-  # Celery Worker for Background Tasks
-  celery-worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: celery -A app.core.celery worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://a11yomatic:password@db:5432/a11yomatic
-      - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=your-secret-key-here
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_API_BASE_URL=${OPENAI_API_BASE_URL:-https://api.openai.com/v1}
-      - GROQ_API_KEY=${GROQ_API_KEY}
-    volumes:
-      - ./backend:/app
-      - ./uploads:/app/uploads
-    depends_on:
-      - db
-      - redis
-    restart: unless-stopped
-    networks:
-      - a11yomatic-network
-
-  # Celery Beat for Scheduled Tasks
-  celery-beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: celery -A app.core.celery beat --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://a11yomatic:password@db:5432/a11yomatic
-      - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=your-secret-key-here
-    volumes:
-      - ./backend:/app
-    depends_on:
-      - db
-      - redis
-    restart: unless-stopped
-    networks:
-      - a11yomatic-network
-
-  # Flower for Celery Monitoring
-  flower:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: celery -A app.core.celery flower --port=5555
-    ports:
-      - "5555:5555"
-    environment:
-      - DATABASE_URL=postgresql://a11yomatic:password@db:5432/a11yomatic
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - redis
-    restart: unless-stopped
-    networks:
-      - a11yomatic-network
 
 volumes:
   postgres_data:

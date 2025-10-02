@@ -1,6 +1,6 @@
 """AI service for content generation and accessibility improvements"""
 import openai
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import logging
 from app.core.config import settings
 

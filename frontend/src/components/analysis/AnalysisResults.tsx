@@ -15,7 +15,7 @@ const AnalysisResults: React.FC = () => {
       return response.data;
     },
     enabled: !!pdfId,
-    refetchInterval: (data) => {
+    refetchInterval: (data: any) => {
       // Keep polling if status is processing
       return data?.status === 'processing' ? 3000 : false;
     },

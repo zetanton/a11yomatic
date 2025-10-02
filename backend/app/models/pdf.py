@@ -17,7 +17,7 @@ class PDFDocument(Base):
     file_size = Column(Integer, nullable=False)
     upload_date = Column(DateTime, default=datetime.utcnow)
     processing_status = Column(String, default="pending")  # pending, processing, completed, failed
-    metadata = Column(JSON)
+    document_metadata = Column(JSON)
     
     # Relationships
     user = relationship("User", back_populates="pdf_documents")
