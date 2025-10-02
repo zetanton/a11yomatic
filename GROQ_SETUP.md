@@ -107,3 +107,4 @@ docker-compose logs -f backend
 4. Begin testing PDF accessibility features with fast AI inference!
 
 For detailed configuration options, see [Custom AI Setup Guide](docs/custom-ai-setup.md).
+
