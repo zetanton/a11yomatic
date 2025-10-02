@@ -200,3 +200,43 @@ async def get_issues(
     return issues
 
 
+@router.post("/{pdf_id}/generate-tags", status_code=status.HTTP_200_OK)
+async def generate_auto_tags(
+    pdf_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Generate AI-powered auto-tagging suggestions for document structure"""
+    # Check if PDF exists
+    pdf = db.query(PDFDocument).filter(
+        PDFDocument.id == pdf_id,
+        PDFDocument.user_id == current_user["user_id"]
+    ).first()
+    
+    if not pdf:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="PDF not found"
+        )
+    
+    try:
+        # Generate auto-tags using PDF processor
+        processor = PDFProcessor()
+        tag_analysis = await processor.generate_auto_tags(pdf.file_path)
+        
+        return {
+            "pdf_id": pdf_id,
+            "suggested_tags": tag_analysis.get("suggested_tags", []),
+            "content_analysis": tag_analysis.get("content_analysis", {}),
+            "tagging_strategy": tag_analysis.get("tagging_strategy", "fallback"),
+            "message": f"Generated {len(tag_analysis.get('suggested_tags', []))} tag suggestions"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating auto-tags for PDF {pdf_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating auto-tags: {str(e)}"
+        )
+
+

@@ -34,12 +34,15 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-primary-500">A11yomatic</h1>
-          <p className="mt-2 text-gray-400">
+          <h1 className="text-4xl font-bold text-maroon">A11yomatic</h1>
+          <p className="mt-2 text-gray-600">
             PDF Accessibility Remediation Tool
+          </p>
+          <p className="mt-1 text-sm text-gray-500">
+            Texas A&M University
           </p>
         </div>
 
@@ -49,7 +52,7 @@ const Register: React.FC = () => {
           </h2>
 
           {error && (
-            <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-4">
+            <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-lg mb-4">
               {error}
             </div>
           )}
@@ -58,7 +61,7 @@ const Register: React.FC = () => {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Email address
               </label>
@@ -77,7 +80,7 @@ const Register: React.FC = () => {
             <div>
               <label
                 htmlFor="full_name"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Full Name
               </label>
@@ -96,7 +99,7 @@ const Register: React.FC = () => {
             <div>
               <label
                 htmlFor="organization"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Organization (Optional)
               </label>
@@ -114,7 +117,7 @@ const Register: React.FC = () => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Password
               </label>
@@ -139,11 +142,11 @@ const Register: React.FC = () => {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-400">
+          <p className="mt-6 text-center text-sm text-gray-600">
             Already have an account?{' '}
             <Link
               to="/login"
-              className="text-primary-500 hover:text-primary-400 font-medium"
+              className="text-maroon hover:text-maroon-light font-medium"
             >
               Sign in here
             </Link>

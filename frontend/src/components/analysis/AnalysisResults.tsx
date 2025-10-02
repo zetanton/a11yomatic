@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { analysisAPI, remediationAPI, reportsAPI } from '../../services/api';
+import { analysisAPI, remediationAPI, reportsAPI, pdfAPI } from '../../services/api';
 
 const AnalysisResults: React.FC = () => {
   const { pdfId } = useParams<{ pdfId: string }>();
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
   const [remediation, setRemediation] = useState<any>(null);
+  const [fixedIssues, setFixedIssues] = useState<Set<string>>(new Set());
+  const [fixingIssues, setFixingIssues] = useState<Set<string>>(new Set());
+  const [isApplyingAll, setIsApplyingAll] = useState(false);
 
   const { data: analysis, isLoading, refetch } = useQuery({
     queryKey: ['analysis', pdfId],
@@ -40,20 +43,84 @@ const AnalysisResults: React.FC = () => {
     return classes[severity as keyof typeof classes] || 'badge';
   };
 
-  const handleGenerateRemediation = async (issueId: string) => {
+  const handleApplyFix = async (issueId: string) => {
+    setFixingIssues(prev => new Set(prev).add(issueId));
+    
     try {
-      const response = await remediationAPI.generate(issueId);
-      setRemediation(response.data);
+      // Generate and apply remediation
+      await remediationAPI.generate(issueId);
+      await remediationAPI.approve(issueId, true);
+      
+      setFixedIssues(prev => new Set(prev).add(issueId));
+      
+      // Refresh analysis to show updated status
+      setTimeout(() => refetch(), 500);
     } catch (error) {
-      console.error('Failed to generate remediation:', error);
+      console.error('Failed to apply fix:', error);
+      alert('Failed to apply fix. Please try again.');
+    } finally {
+      setFixingIssues(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(issueId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleApplyAllFixes = async () => {
+    if (!analysis?.issues || analysis.issues.length === 0) return;
+    
+    const confirmed = window.confirm(
+      `Apply automatic fixes to all ${analysis.issues.length} issues? This will modify the PDF.`
+    );
+    
+    if (!confirmed) return;
+    
+    setIsApplyingAll(true);
+    
+    try {
+      // Use bulk remediation endpoint
+      const response = await remediationAPI.bulkRemediatePdf(pdfId!);
+      
+      // Mark all issues as fixed
+      const allIssueIds = analysis.issues.map((issue: any) => issue.id);
+      setFixedIssues(new Set(allIssueIds));
+      
+      alert(`All fixes applied successfully!\n\n${response.data.count} issues fixed.\n\nClick "Download Fixed PDF" to get your accessible document.`);
+      refetch();
+    } catch (error) {
+      console.error('Failed to apply all fixes:', error);
+      alert('Failed to apply all fixes. Please try again or fix issues individually.');
+    } finally {
+      setIsApplyingAll(false);
+    }
+  };
+
+  const handleDownloadFixed = async () => {
+    try {
+      const response = await pdfAPI.downloadFixed(pdfId!);
+      
+      // Create blob URL and trigger download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `fixed_${pdfId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download fixed PDF:', error);
+      alert('Failed to download fixed PDF. Please try again.');
     }
   };
 
   if (isLoading) {
     return (
       <div className="text-center py-12">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
-        <p className="text-gray-400 mt-4">Loading analysis...</p>
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-maroon"></div>
+        <p className="text-gray-600 mt-4">Loading analysis...</p>
       </div>
     );
   }
@@ -61,9 +128,9 @@ const AnalysisResults: React.FC = () => {
   if (analysis?.status === 'processing') {
     return (
       <div className="text-center py-12 card">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-maroon"></div>
         <h2 className="text-2xl font-semibold mt-6 mb-2">Analyzing PDF...</h2>
-        <p className="text-gray-400">
+        <p className="text-gray-600">
           This may take a few moments. We're checking for accessibility issues.
         </p>
       </div>
@@ -73,10 +140,10 @@ const AnalysisResults: React.FC = () => {
   if (!analysis || analysis.status === 'failed') {
     return (
       <div className="text-center py-12 card">
-        <h2 className="text-2xl font-semibold text-red-500 mb-4">
+        <h2 className="text-2xl font-semibold text-red-600 mb-4">
           Analysis Failed
         </h2>
-        <p className="text-gray-400">
+        <p className="text-gray-600">
           There was an error analyzing your PDF. Please try uploading it again.
         </p>
       </div>
@@ -86,11 +153,32 @@ const AnalysisResults: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Analysis Results</h1>
-        <p className="text-gray-400 mt-2">
-          Review accessibility issues and remediation suggestions
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">Analysis Results</h1>
+          <p className="text-gray-600 mt-2">
+            Review and fix accessibility issues
+          </p>
+        </div>
+        <div className="flex gap-3">
+          {fixedIssues.size > 0 && (
+            <button
+              onClick={handleDownloadFixed}
+              className="btn-primary"
+            >
+              📥 Download Fixed PDF
+            </button>
+          )}
+          {analysis?.issues && analysis.issues.length > 0 && (
+            <button
+              onClick={handleApplyAllFixes}
+              disabled={isApplyingAll || fixedIssues.size === analysis.issues.length}
+              className="btn-secondary"
+            >
+              {isApplyingAll ? '⚙️ Applying Fixes...' : '🔧 Fix All Issues'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -98,7 +186,7 @@ const AnalysisResults: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <div className="card">
             <div className="text-sm text-gray-400">Overall Score</div>
-            <div className="text-3xl font-bold text-primary-500 mt-2">
+            <div className="text-3xl font-bold text-maroon mt-2">
               {report.overall_score}/100
             </div>
           </div>
@@ -131,27 +219,51 @@ const AnalysisResults: React.FC = () => {
 
       {/* Issues List */}
       <div className="card">
-        <h2 className="text-2xl font-semibold mb-6">Accessibility Issues</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold">Accessibility Issues</h2>
+          {analysis?.issues && analysis.issues.length > 0 && (
+            <div className="text-sm">
+              <span className="text-gray-600">Fixed: </span>
+              <span className="font-bold text-green-600">{fixedIssues.size}</span>
+              <span className="text-gray-400"> / </span>
+              <span className="font-bold text-gray-900">{analysis.issues.length}</span>
+              <div className="w-48 bg-gray-200 rounded-full h-2 mt-2">
+                <div
+                  className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(fixedIssues.size / analysis.issues.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         {analysis.issues && analysis.issues.length > 0 ? (
           <div className="space-y-4">
             {analysis.issues.map((issue: any) => (
               <div
                 key={issue.id}
-                className="border border-dark-700 rounded-lg p-4 hover:border-primary-500 transition-colors cursor-pointer"
-                onClick={() => setSelectedIssue(issue)}
+                className={`border rounded-lg p-4 transition-all ${
+                  fixedIssues.has(issue.id) 
+                    ? 'border-green-300 bg-green-50' 
+                    : 'border-gray-200 bg-white hover:border-maroon hover:shadow-md'
+                }`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 mb-2 flex-wrap">
+                      {fixedIssues.has(issue.id) && (
+                        <span className="badge bg-green-100 text-green-800 border-green-300">
+                          ✓ Fixed
+                        </span>
+                      )}
                       <span className={`${getSeverityBadge(issue.severity)}`}>
                         {issue.severity}
                       </span>
-                      <span className="text-sm text-gray-400">
+                      <span className="text-sm text-gray-600">
                         {issue.page_number && `Page ${issue.page_number}`}
                       </span>
                       {issue.wcag_criteria && (
-                        <span className="text-sm text-gray-400">
+                        <span className="text-sm text-gray-600">
                           WCAG {issue.wcag_criteria}
                         </span>
                       )}
@@ -159,63 +271,66 @@ const AnalysisResults: React.FC = () => {
                     <h3 className="text-lg font-medium mb-2">
                       {issue.issue_type.replace(/_/g, ' ').toUpperCase()}
                     </h3>
-                    <p className="text-gray-400 text-sm">{issue.description}</p>
+                    <p className="text-gray-600 text-sm mb-3">{issue.description}</p>
+                    
+                    {/* Quick Fix Description */}
+                    <div className="text-xs bg-blue-50 border border-blue-200 rounded-lg p-3 inline-block">
+                      <p className="font-semibold text-blue-900 mb-1">Quick Fix:</p>
+                      <p className="text-blue-800">
+                        {issue.issue_type === 'missing_alt_text' && 'Add descriptive alt text to images'}
+                        {issue.issue_type === 'heading_structure' && 'Fix heading hierarchy (H1→H2→H3)'}
+                        {issue.issue_type === 'color_contrast' && 'Increase color contrast ratio to 4.5:1'}
+                        {issue.issue_type === 'table_structure' && 'Add table headers and row/column labels'}
+                        {issue.issue_type === 'reading_order' && 'Reorder content for logical flow'}
+                        {issue.issue_type === 'form_labels' && 'Add labels to all form fields'}
+                        {issue.issue_type === 'link_text' && 'Use descriptive link text (not "click here")'}
+                        {!['missing_alt_text', 'heading_structure', 'color_contrast', 'table_structure', 'reading_order', 'form_labels', 'link_text'].includes(issue.issue_type) && 'Review and apply accessibility standards'}
+                      </p>
+                    </div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGenerateRemediation(issue.id);
-                    }}
-                    className="btn-primary text-sm ml-4"
-                  >
-                    Generate Fix
-                  </button>
+                  
+                  {/* Action Button */}
+                  <div className="flex-shrink-0">
+                    {fixedIssues.has(issue.id) ? (
+                      <div className="text-center">
+                        <div className="text-green-600 text-3xl mb-1">✓</div>
+                        <p className="text-xs text-green-700 font-medium">Applied</p>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleApplyFix(issue.id)}
+                        disabled={fixingIssues.has(issue.id)}
+                        className="btn-primary text-sm whitespace-nowrap"
+                      >
+                        {fixingIssues.has(issue.id) ? '⚙️ Fixing...' : '🔧 Apply Fix'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-400">No accessibility issues found!</p>
-            <p className="text-green-500 mt-2">Your PDF looks great!</p>
+            <p className="text-gray-600">No accessibility issues found!</p>
+            <p className="text-green-600 mt-2">Your PDF looks great!</p>
           </div>
         )}
       </div>
 
       {/* Remediation Modal */}
       {remediation && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-dark-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-dark-700">
-              <h3 className="text-xl font-semibold">
-                AI-Generated Remediation Suggestion
-              </h3>
-              <button
-                onClick={() => setRemediation(null)}
-                className="text-gray-400 hover:text-white text-2xl"
-              >
-                ×
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="card max-w-2xl w-full">
+            <h3 className="text-xl font-semibold mb-4">
+              AI-Generated Remediation Suggestion
+            </h3>
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {remediation.ai_generated_content}
+              </p>
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="bg-dark-700 rounded-lg p-6 mb-6">
-                <div 
-                  className="text-gray-300 prose prose-invert max-w-none prose-p:text-gray-300 prose-strong:text-white prose-ul:text-gray-300 prose-li:text-gray-300"
-                  dangerouslySetInnerHTML={{ 
-                    __html: remediation.ai_generated_content
-                      .replace(/\n\n/g, '</p><p>')
-                      .replace(/\n/g, '<br>')
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                      .replace(/^/, '<p>')
-                      .replace(/$/, '</p>')
-                  }}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-4 p-6 border-t border-dark-700">
+            <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setRemediation(null)}
                 className="btn-secondary"

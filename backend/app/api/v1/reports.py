@@ -29,6 +29,44 @@ class ReportSummary(BaseModel):
         from_attributes = True
 
 
+@router.get("/analytics", response_model=Dict[str, Any])
+async def get_analytics(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get analytics data for user's PDFs"""
+    # Get all user's PDFs
+    pdfs = db.query(PDFDocument).filter(
+        PDFDocument.user_id == current_user["user_id"]
+    ).all()
+    
+    # Get all reports
+    pdf_ids = [pdf.id for pdf in pdfs]
+    reports = db.query(AnalysisReport).filter(
+        AnalysisReport.pdf_id.in_(pdf_ids)
+    ).all() if pdf_ids else []
+    
+    # Calculate analytics
+    total_pdfs = len(pdfs)
+    total_issues = sum(report.total_issues for report in reports)
+    avg_score = sum(report.overall_score for report in reports) / len(reports) if reports else 0
+    
+    # Issue breakdown
+    issue_breakdown = {
+        "critical": sum(report.critical_issues for report in reports),
+        "high": sum(report.high_issues for report in reports),
+        "medium": sum(report.medium_issues for report in reports),
+        "low": sum(report.low_issues for report in reports),
+    }
+    
+    return {
+        "total_pdfs": total_pdfs,
+        "total_issues": total_issues,
+        "average_score": round(avg_score, 2),
+        "issue_breakdown": issue_breakdown,
+    }
+
+
 @router.get("/{pdf_id}", response_model=ReportSummary)
 async def get_report(
     pdf_id: str,
@@ -144,41 +182,5 @@ async def export_report_json(
     )
 
 
-@router.get("/analytics", response_model=Dict[str, Any])
-async def get_analytics(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
-    """Get analytics data for user's PDFs"""
-    # Get all user's PDFs
-    pdfs = db.query(PDFDocument).filter(
-        PDFDocument.user_id == current_user["user_id"]
-    ).all()
-    
-    # Get all reports
-    pdf_ids = [pdf.id for pdf in pdfs]
-    reports = db.query(AnalysisReport).filter(
-        AnalysisReport.pdf_id.in_(pdf_ids)
-    ).all()
-    
-    # Calculate analytics
-    total_pdfs = len(pdfs)
-    total_issues = sum(report.total_issues for report in reports)
-    avg_score = sum(report.overall_score for report in reports) / len(reports) if reports else 0
-    
-    # Issue breakdown
-    issue_breakdown = {
-        "critical": sum(report.critical_issues for report in reports),
-        "high": sum(report.high_issues for report in reports),
-        "medium": sum(report.medium_issues for report in reports),
-        "low": sum(report.low_issues for report in reports),
-    }
-    
-    return {
-        "total_pdfs": total_pdfs,
-        "total_issues": total_issues,
-        "average_score": round(avg_score, 2),
-        "issue_breakdown": issue_breakdown,
-    }
 
 

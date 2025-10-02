@@ -56,6 +56,10 @@ export const pdfAPI = {
   get: (id: string) => api.get(`/api/v1/pdfs/${id}`),
   
   delete: (id: string) => api.delete(`/api/v1/pdfs/${id}`),
+  
+  downloadFixed: (id: string) => api.get(`/api/v1/pdfs/${id}/download-fixed`, {
+    responseType: 'blob',
+  }),
 };
 
 // Analysis API
@@ -70,6 +74,9 @@ export const analysisAPI = {
     const params = severity ? { severity } : {};
     return api.get(`/api/v1/analysis/${pdfId}/issues`, { params });
   },
+  
+  generateAutoTags: (pdfId: string) =>
+    api.post(`/api/v1/analysis/${pdfId}/generate-tags`),
 };
 
 // Remediation API
@@ -83,25 +90,8 @@ export const remediationAPI = {
   approve: (issueId: string, approved: boolean) =>
     api.put(`/api/v1/remediation/${issueId}/approve`, { approved }),
   
-  // Bulk operations
-  generateBulk: (data: {
-    pdf_ids?: string[];
-    issue_types?: string[];
-    severities?: string[];
-  }) => api.post('/api/v1/remediation/bulk/generate', data),
-  
-  approveBulk: (data: {
-    remediation_ids: string[];
-    approved: boolean;
-  }) => api.put('/api/v1/remediation/bulk/approve', data),
-  
-  implementBulk: (data: {
-    pdf_ids?: string[];
-    issue_types?: string[];
-    severities?: string[];
-  }) => api.post('/api/v1/remediation/bulk/implement', data),
-  
-  getBulkStatus: () => api.get('/api/v1/remediation/bulk/status'),
+  bulkRemediatePdf: (pdfId: string) =>
+    api.post(`/api/v1/remediation/bulk/${pdfId}`),
 };
 
 // Reports API

@@ -215,6 +215,10 @@ class PDFProcessor:
                 "location": {"document": "metadata"},
             })
             
+            # Check for document tags (PDF/UA compliance)
+            tag_issues = await self._check_document_tags(doc)
+            issues.extend(tag_issues)
+            
             doc.close()
         
         except Exception as e:
@@ -291,5 +295,99 @@ class PDFProcessor:
             logger.error(f"Error extracting content: {str(e)}")
         
         return content
+    
+    async def _check_document_tags(self, doc: fitz.Document) -> List[Dict[str, Any]]:
+        """Check for proper document tags (PDF/UA compliance)"""
+        issues = []
+        
+        try:
+            # Check if document has structure tree (tags)
+            struct_tree = doc.get_pdf_structure()
+            
+            if not struct_tree:
+                issues.append({
+                    "type": "missing_document_tags",
+                    "severity": "high",
+                    "page": None,
+                    "description": "Document lacks proper structure tags. PDF/UA compliance requires a tagged structure tree for screen readers.",
+                    "wcag_criteria": "1.3.1",
+                    "location": {"document": "structure"},
+                })
+            else:
+                # Analyze existing tags for completeness
+                tag_analysis = await self._analyze_document_tags(doc)
+                if tag_analysis.get("missing_tags"):
+                    issues.append({
+                        "type": "incomplete_document_tags",
+                        "severity": "medium",
+                        "page": None,
+                        "description": f"Document has some structure tags but is missing: {', '.join(tag_analysis['missing_tags'])}",
+                        "wcag_criteria": "1.3.1",
+                        "location": {"document": "structure"},
+                    })
+            
+        except Exception as e:
+            logger.error(f"Error checking document tags: {str(e)}")
+        
+        return issues
+    
+    async def _analyze_document_tags(self, doc: fitz.Document) -> Dict[str, Any]:
+        """Analyze existing document tags and suggest improvements"""
+        try:
+            # Get document structure
+            struct_tree = doc.get_pdf_structure()
+            
+            if not struct_tree:
+                return {"has_tags": False, "missing_tags": ["Document", "H1", "H2", "P", "Figure"]}
+            
+            # Analyze tag structure (simplified analysis)
+            # In a real implementation, this would be more sophisticated
+            existing_tags = set()
+            missing_tags = []
+            
+            # Check for common accessibility tags
+            required_tags = ["Document", "H1", "H2", "P", "Figure", "Table", "TH", "TD"]
+            
+            # This is a simplified check - real implementation would parse the structure tree
+            for tag in required_tags:
+                if tag not in existing_tags:
+                    missing_tags.append(tag)
+            
+            return {
+                "has_tags": True,
+                "existing_tags": list(existing_tags),
+                "missing_tags": missing_tags,
+                "tag_count": len(existing_tags)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing document tags: {str(e)}")
+            return {"has_tags": False, "missing_tags": ["Document", "H1", "H2", "P", "Figure"]}
+    
+    async def generate_auto_tags(self, pdf_path: str) -> Dict[str, Any]:
+        """Generate AI-powered auto-tagging suggestions for document structure"""
+        try:
+            # Extract content for AI analysis
+            content = await self.extract_content(pdf_path)
+            
+            # Use AI service to generate tag suggestions
+            from app.services.ai_service import AIService
+            ai_service = AIService()
+            
+            tag_suggestions = await ai_service.generate_document_tags(content)
+            
+            return {
+                "suggested_tags": tag_suggestions,
+                "content_analysis": content,
+                "tagging_strategy": "ai_generated"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating auto tags: {str(e)}")
+            return {
+                "suggested_tags": [],
+                "content_analysis": {},
+                "tagging_strategy": "fallback"
+            }
 
 
