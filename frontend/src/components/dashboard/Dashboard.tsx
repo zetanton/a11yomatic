@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pdfAPI, reportsAPI } from '../../services/api';
+import BulkRemediation from '../remediation/BulkRemediation';
 
 const Dashboard: React.FC = () => {
   const { data: pdfs, isLoading: pdfsLoading } = useQuery({
@@ -152,6 +153,11 @@ const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Bulk Remediation Management */}
+      {pdfs && pdfs.length > 0 && (
+        <BulkRemediation pdfIds={pdfs.map((pdf: any) => pdf.id)} />
+      )}
     </div>
   );
 };

@@ -1,0 +1,12 @@
+Test PDF for Accessibility Analysis
+
+This is a test document with potential accessibility issues.
+
+Issues that should be detected:
+- Missing document title
+- No proper heading structure
+- No alt text for any images (if we add them)
+- Poor color contrast (if we add colors)
+- No table headers (if we add tables)
+
+This document is designed to trigger accessibility analysis and test our remediation system.

@@ -82,6 +82,26 @@ export const remediationAPI = {
   
   approve: (issueId: string, approved: boolean) =>
     api.put(`/api/v1/remediation/${issueId}/approve`, { approved }),
+  
+  // Bulk operations
+  generateBulk: (data: {
+    pdf_ids?: string[];
+    issue_types?: string[];
+    severities?: string[];
+  }) => api.post('/api/v1/remediation/bulk/generate', data),
+  
+  approveBulk: (data: {
+    remediation_ids: string[];
+    approved: boolean;
+  }) => api.put('/api/v1/remediation/bulk/approve', data),
+  
+  implementBulk: (data: {
+    pdf_ids?: string[];
+    issue_types?: string[];
+    severities?: string[];
+  }) => api.post('/api/v1/remediation/bulk/implement', data),
+  
+  getBulkStatus: () => api.get('/api/v1/remediation/bulk/status'),
 };
 
 // Reports API

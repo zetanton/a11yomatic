@@ -185,16 +185,37 @@ const AnalysisResults: React.FC = () => {
       {/* Remediation Modal */}
       {remediation && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="card max-w-2xl w-full">
-            <h3 className="text-xl font-semibold mb-4">
-              AI-Generated Remediation Suggestion
-            </h3>
-            <div className="bg-dark-700 rounded-lg p-4 mb-6">
-              <p className="text-gray-300 whitespace-pre-wrap">
-                {remediation.ai_generated_content}
-              </p>
+          <div className="bg-dark-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-dark-700">
+              <h3 className="text-xl font-semibold">
+                AI-Generated Remediation Suggestion
+              </h3>
+              <button
+                onClick={() => setRemediation(null)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ×
+              </button>
             </div>
-            <div className="flex justify-end space-x-4">
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="bg-dark-700 rounded-lg p-6 mb-6">
+                <div 
+                  className="text-gray-300 prose prose-invert max-w-none prose-p:text-gray-300 prose-strong:text-white prose-ul:text-gray-300 prose-li:text-gray-300"
+                  dangerouslySetInnerHTML={{ 
+                    __html: remediation.ai_generated_content
+                      .replace(/\n\n/g, '</p><p>')
+                      .replace(/\n/g, '<br>')
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/^/, '<p>')
+                      .replace(/$/, '</p>')
+                  }}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-4 p-6 border-t border-dark-700">
               <button
                 onClick={() => setRemediation(null)}
                 className="btn-secondary"
