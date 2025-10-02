@@ -38,9 +38,12 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-dark-900 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-primary-500">A11yomatic</h1>
+          <h1 className="text-4xl font-bold text-maroon">A11yomatic</h1>
           <p className="mt-2 text-gray-400">
             PDF Accessibility Remediation Tool
+          </p>
+          <p className="mt-1 text-sm text-gray-500">
+            Texas A&M University
           </p>
         </div>
 
@@ -105,7 +108,7 @@ const Login: React.FC = () => {
             Don't have an account?{' '}
             <Link
               to="/register"
-              className="text-primary-500 hover:text-primary-400 font-medium"
+              className="text-maroon-light hover:text-maroon font-medium"
             >
               Register here
             </Link>

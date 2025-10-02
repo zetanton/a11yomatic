@@ -2,12 +2,15 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.0-500000.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
-![React](https://img.shields.io/badge/react-18.2+-blue.svg)
+![Python](https://img.shields.io/badge/python-3.11+-500000.svg)
+![React](https://img.shields.io/badge/react-18.2+-500000.svg)
+![Texas A&M](https://img.shields.io/badge/Texas%20A%26M-University-500000.svg)
 
 A comprehensive tool for identifying, analyzing, and remediating PDF accessibility issues using AI-powered content generation and modern web technologies.
+
+**Developed at Texas A&M University**
 
 [Quick Start](#-quick-start) • [Features](#-key-features) • [Documentation](#-documentation) • [Architecture](#-architecture)
 
@@ -24,7 +27,7 @@ A11yomatic is designed to help organizations ensure their PDF documents meet acc
 - **🤖 AI-Powered**: Uses advanced AI models (Groq/OpenAI) for intelligent content generation
 - **🚀 Fast**: Automated analysis saves hours of manual work
 - **📊 Comprehensive**: Checks multiple accessibility standards
-- **🎨 Beautiful UI**: Modern dark theme with intuitive interface
+- **🎨 Beautiful UI**: Texas A&M branded interface with Aggie Maroon theme
 - **🆓 Free & Open Source**: Built with free tools and libraries
 
 ## ✨ Key Features
@@ -322,15 +325,14 @@ We welcome contributions! Please see our Contributing Guide for details.
 
 ## 📄 License
 
-<<<<<<< Current (Your changes)
-MIT License - see [LICENSE](LICENSE) for details.
-=======
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
+- Developed at **Texas A&M University**
 - Built with [FastAPI](https://fastapi.tiangolo.com/)
 - UI powered by [React](https://react.dev/) and [Tailwind CSS](https://tailwindcss.com/)
+- Follows [Texas A&M Web Branding Guidelines](https://brandguide.tamu.edu/web/)
 - PDF processing with [PyPDF2](https://pypdf2.readthedocs.io/), [pdfplumber](https://github.com/jsvine/pdfplumber), and [PyMuPDF](https://pymupdf.readthedocs.io/)
 - AI by [Groq](https://groq.com/) / [OpenAI](https://openai.com/)
 
@@ -339,6 +341,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **Documentation**: Check the [docs](docs/) folder
 - **Issues**: Open an issue on GitHub
 - **Questions**: See [QUICKSTART.md](QUICKSTART.md)
+- **Texas A&M Resources**: [www.tamu.edu](https://www.tamu.edu)
 
 ---
 
@@ -346,7 +349,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 **[⬆ back to top](#a11yomatic---pdf-accessibility-remediation-tool)**
 
-Made with ❤️ for accessibility
+Made with ❤️ for accessibility at Texas A&M University
 
 </div>
->>>>>>> Incoming (Background Agent changes)

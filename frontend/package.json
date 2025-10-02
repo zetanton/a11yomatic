@@ -1,7 +1,7 @@
 {
   "name": "a11yomatic-frontend",
   "version": "1.0.0",
-  "description": "PDF Accessibility Remediation Tool - Frontend",
+  "description": "Texas A&M University PDF Accessibility Remediation Tool - Frontend",
   "private": true,
   "dependencies": {
     "@headlessui/react": "^1.7.17",
