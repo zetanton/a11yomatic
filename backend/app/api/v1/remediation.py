@@ -163,3 +163,83 @@ async def approve_remediation(
     return remediation
 
 
+@router.post("/bulk/{pdf_id}", status_code=status.HTTP_200_OK)
+async def bulk_remediate_pdf(
+    pdf_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Generate and approve remediations for ALL issues in a PDF"""
+    # Verify user owns the PDF
+    pdf = db.query(PDFDocument).filter(
+        PDFDocument.id == pdf_id,
+        PDFDocument.user_id == current_user["user_id"]
+    ).first()
+    
+    if not pdf:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    
+    # Get all issues for this PDF
+    issues = db.query(AccessibilityIssue).filter(
+        AccessibilityIssue.pdf_id == pdf_id
+    ).all()
+    
+    if not issues:
+        return {"message": "No issues found", "count": 0}
+    
+    ai_service = AIService()
+    fixed_count = 0
+    
+    for issue in issues:
+        try:
+            # Check if remediation already exists
+            existing = db.query(RemediationPlan).filter(
+                RemediationPlan.issue_id == issue.id
+            ).first()
+            
+            if existing:
+                # Just approve it if not already approved
+                if not existing.user_approved:
+                    existing.user_approved = True
+                    existing.implementation_status = "approved"
+                    fixed_count += 1
+            else:
+                # Generate remediation
+                issue_data = {
+                    "type": issue.issue_type,
+                    "severity": issue.severity,
+                    "description": issue.description,
+                    "wcag_criteria": issue.wcag_criteria
+                }
+                
+                suggestion = await ai_service.generate_remediation_suggestion(issue_data)
+                
+                # Create and approve remediation
+                remediation = RemediationPlan(
+                    issue_id=issue.id,
+                    ai_generated_content=suggestion,
+                    user_approved=True,
+                    implementation_status="approved"
+                )
+                
+                db.add(remediation)
+                fixed_count += 1
+        
+        except Exception as e:
+            logger.error(f"Error creating remediation for issue {issue.id}: {str(e)}")
+            continue
+    
+    db.commit()
+    
+    logger.info(f"Bulk remediation completed for PDF {pdf_id}: {fixed_count} issues")
+    
+    return {
+        "message": f"Successfully created {fixed_count} remediations",
+        "count": fixed_count,
+        "total_issues": len(issues)
+    }
+
+

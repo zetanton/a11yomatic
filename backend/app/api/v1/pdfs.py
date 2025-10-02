@@ -1,5 +1,6 @@
 """PDF management endpoints"""
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
 from pathlib import Path
@@ -9,7 +10,8 @@ import logging
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.config import settings
-from app.models.pdf import PDFDocument
+from app.models.pdf import PDFDocument, AccessibilityIssue, RemediationPlan
+from app.services.pdf_remediator import PDFRemediator
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -152,5 +154,92 @@ async def delete_pdf(
     logger.info(f"PDF deleted: {pdf_id}")
     
     return None
+
+
+@router.get("/{pdf_id}/download-fixed")
+async def download_fixed_pdf(
+    pdf_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Download the remediated/fixed version of a PDF"""
+    # Get PDF
+    pdf = db.query(PDFDocument).filter(
+        PDFDocument.id == pdf_id,
+        PDFDocument.user_id == current_user["user_id"]
+    ).first()
+    
+    if not pdf:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="PDF not found"
+        )
+    
+    # Get all issues and remediations
+    issues = db.query(AccessibilityIssue).filter(
+        AccessibilityIssue.pdf_id == pdf_id
+    ).all()
+    
+    remediations = db.query(RemediationPlan).join(
+        AccessibilityIssue,
+        RemediationPlan.issue_id == AccessibilityIssue.id
+    ).filter(
+        AccessibilityIssue.pdf_id == pdf_id,
+        RemediationPlan.user_approved == True
+    ).all()
+    
+    if not remediations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No fixes have been applied yet. Please apply fixes first."
+        )
+    
+    # Convert to dictionaries
+    issues_data = [
+        {
+            "id": issue.id,
+            "issue_type": issue.issue_type,
+            "severity": issue.severity,
+            "page_number": issue.page_number,
+            "description": issue.description,
+            "wcag_criteria": issue.wcag_criteria
+        }
+        for issue in issues
+    ]
+    
+    remediations_data = [
+        {
+            "issue_id": rem.issue_id,
+            "user_approved": rem.user_approved,
+            "ai_generated_content": rem.ai_generated_content
+        }
+        for rem in remediations
+    ]
+    
+    try:
+        # Apply fixes
+        remediator = PDFRemediator()
+        fixed_path = await remediator.apply_fixes(
+            pdf.file_path,
+            issues_data,
+            remediations_data
+        )
+        
+        # Return fixed PDF
+        return FileResponse(
+            fixed_path,
+            media_type="application/pdf",
+            filename=f"fixed_{pdf.filename}",
+            headers={
+                "Content-Disposition": f"attachment; filename=fixed_{pdf.filename}"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating fixed PDF: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating fixed PDF: {str(e)}"
+        )
 
 

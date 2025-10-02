@@ -78,51 +78,51 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-dark-800 border-t border-dark-700">
+      <footer className="bg-gray-100 border-t border-gray-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-400">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-600">
             <div>
-              <h3 className="text-white font-semibold mb-2">A11yomatic</h3>
+              <h3 className="text-gray-900 font-semibold mb-2">A11yomatic</h3>
               <p>PDF Accessibility Remediation Tool</p>
               <p className="mt-1">Texas A&M University</p>
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-2">Resources</h3>
+              <h3 className="text-gray-900 font-semibold mb-2">Resources</h3>
               <ul className="space-y-1">
                 <li>
-                  <a href="https://www.tamu.edu" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500">
+                  <a href="https://www.tamu.edu" target="_blank" rel="noopener noreferrer" className="hover:text-maroon-light">
                     Texas A&M Home
                   </a>
                 </li>
                 <li>
-                  <a href="https://www.tamu.edu/statements/index.html" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500">
+                  <a href="https://www.tamu.edu/statements/index.html" target="_blank" rel="noopener noreferrer" className="hover:text-maroon-light">
                     Site Policies
                   </a>
                 </li>
                 <li>
-                  <a href="https://www.tamu.edu/contact.html" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500">
+                  <a href="https://www.tamu.edu/contact.html" target="_blank" rel="noopener noreferrer" className="hover:text-maroon-light">
                     Contact
                   </a>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-2">Accessibility</h3>
+              <h3 className="text-gray-900 font-semibold mb-2">Accessibility</h3>
               <ul className="space-y-1">
                 <li>
-                  <a href="https://www.tamu.edu/accessibility/" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500">
+                  <a href="https://www.tamu.edu/accessibility/" target="_blank" rel="noopener noreferrer" className="hover:text-maroon-light">
                     Accessibility Policy
                   </a>
                 </li>
                 <li>
-                  <a href="https://www.tamus.edu/legal/state-link-policy/" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500">
+                  <a href="https://www.tamus.edu/legal/state-link-policy/" target="_blank" rel="noopener noreferrer" className="hover:text-maroon-light">
                     State Link Policy
                   </a>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="mt-6 pt-6 border-t border-dark-700 text-center text-xs text-gray-500">
+          <div className="mt-6 pt-6 border-t border-gray-300 text-center text-xs text-gray-500">
             <p>© {new Date().getFullYear()} Texas A&M University. All rights reserved.</p>
           </div>
         </div>

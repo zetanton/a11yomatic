@@ -261,6 +261,116 @@ Provide a detailed remediation suggestion:"""
             logger.error(f"Error generating remediation suggestion: {str(e)}")
             return "Error generating suggestion. Please review WCAG guidelines manually."
     
+    async def generate_document_tags(self, content: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Generate AI-powered document structure tags for PDF accessibility
+        
+        Args:
+            content: Extracted PDF content (text, images, tables)
+            
+        Returns:
+            List of suggested document tags with structure
+        """
+        if not self.client:
+            return self._get_fallback_tags()
+        
+        try:
+            model = "llama-3.1-8b-instant" if "groq" in self.api_base.lower() else "gpt-4"
+            
+            # Prepare content summary for AI
+            text_content = "\n".join(content.get("text", []))[:2000]  # Limit for context
+            table_count = len(content.get("tables", []))
+            image_count = len(content.get("images", []))
+            
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """You are a PDF accessibility expert. Analyze the document content and suggest proper PDF/UA compliant structure tags.
+
+Return a JSON array of tag suggestions with this structure:
+[
+  {
+    "tag_type": "H1|H2|H3|P|Figure|Table|TH|TD|List|ListItem",
+    "content": "actual text content",
+    "page": page_number,
+    "attributes": {"role": "heading", "level": 1},
+    "reasoning": "why this tag is needed for accessibility"
+  }
+]
+
+Focus on:
+- Proper heading hierarchy (H1, H2, H3)
+- Paragraph structure (P tags)
+- Table structure (Table, TH, TD)
+- Image descriptions (Figure tags)
+- List structure (List, ListItem)
+- Logical reading order"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""Document Content Analysis:
+- Text content: {text_content[:500]}...
+- Tables found: {table_count}
+- Images found: {image_count}
+
+Generate appropriate PDF structure tags for accessibility compliance:"""
+                    }
+                ],
+                max_tokens=1000,
+                temperature=0.3
+            )
+            
+            # Parse AI response
+            suggestion_text = response.choices[0].message.content.strip()
+            
+            # Try to extract JSON from response
+            import json
+            try:
+                # Look for JSON in the response
+                start_idx = suggestion_text.find('[')
+                end_idx = suggestion_text.rfind(']') + 1
+                if start_idx != -1 and end_idx != -1:
+                    json_str = suggestion_text[start_idx:end_idx]
+                    tags = json.loads(json_str)
+                    logger.info(f"Generated {len(tags)} document tags")
+                    return tags
+            except json.JSONDecodeError:
+                logger.warning("Could not parse AI response as JSON, using fallback")
+            
+            return self._get_fallback_tags()
+            
+        except Exception as e:
+            logger.error(f"Error generating document tags: {str(e)}")
+            return self._get_fallback_tags()
+    
+    def _get_fallback_tags(self) -> List[Dict[str, Any]]:
+        """Fallback tag suggestions when AI is unavailable"""
+        return [
+            {
+                "tag_type": "Document",
+                "content": "Document root",
+                "page": 1,
+                "attributes": {"role": "document"},
+                "reasoning": "Root document structure required for PDF/UA compliance"
+            },
+            {
+                "tag_type": "H1",
+                "content": "Document Title",
+                "page": 1,
+                "attributes": {"role": "heading", "level": 1},
+                "reasoning": "Main heading for document structure"
+            },
+            {
+                "tag_type": "P",
+                "content": "Document content",
+                "page": 1,
+                "attributes": {"role": "paragraph"},
+                "reasoning": "Paragraph structure for text content"
+            }
+        ]
+
     def _build_alt_text_prompt(self, context: Dict[str, Any]) -> str:
         """Build prompt for alt text generation"""
         page_num = context.get("page", "unknown")

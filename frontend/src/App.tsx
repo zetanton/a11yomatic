@@ -24,7 +24,7 @@ function App() {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <Router>
-          <div className="min-h-screen bg-dark-900">
+          <div className="min-h-screen bg-gray-50">
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
